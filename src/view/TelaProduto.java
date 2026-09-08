@@ -117,5 +117,6 @@ public class TelaProduto extends JFrame {
         add(btnPainel, BorderLayout.SOUTH);
 
         carregarCategoria();
+        carregarProdutos();
     }
 }
