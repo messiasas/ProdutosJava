@@ -8,6 +8,7 @@ import model.Produto;
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
+import java.math.BigDecimal;
 import java.sql.SQLException;
 import java.util.List;
 
@@ -26,6 +27,8 @@ public class TelaProduto extends JFrame {
 
     private JTable tabelaProduto;
     private DefaultTableModel modeloTabela;
+
+    ProdutoDAO produtoDAO = new ProdutoDAO();
 
     private void carregarCategoria(){
         try{
@@ -62,7 +65,35 @@ public class TelaProduto extends JFrame {
         }catch (SQLException iu){
             JOptionPane.showMessageDialog(this,"Erro ao carregar produtos: "+iu.getMessage());
         }
+    }
 
+    private void atualizarTabela(){
+        DefaultTableModel model = (DefaultTableModel) tabelaProduto.getModel();
+        model.setRowCount(0); // remove todas as linhas antes de popular
+
+        try{
+            List<Produto> produtos = produtoDAO.listarTodos();
+            for(Produto p : produtos) {
+                model.addRow(new Object[]{
+                    p.getId(),
+                    p.getNome(),
+                    p.getDescricao(),
+                    p.getPreco(),
+                    p.getQuantidade(),
+                    p.getCategoria()
+                });
+            }
+        }catch (SQLException e){
+            JOptionPane.showMessageDialog(this,"Erro ao atualizar tabela: "+e.getMessage());
+        }
+    }
+
+    private void limparDados(){
+        nome_campo.setText("");
+        descr_campo.setText("");
+        preco_campo.setText("");
+        qtd_campo.setText("");
+        comboCategoria.setSelectedIndex(0);
     }
 
     public TelaProduto(){
@@ -103,8 +134,32 @@ public class TelaProduto extends JFrame {
         JScrollPane scrollTabela = new JScrollPane(tabelaProduto);
 
         add_btn = new JButton("Adicionar");
+        add_btn.addActionListener(e ->{
+            try{
+                String nome = nome_campo.getText().toString().trim();
+                String descricao = descr_campo.getText().toString().trim();
+                BigDecimal preco = new BigDecimal(preco_campo.getText().trim());
+                int qtd = Integer.parseInt(qtd_campo.getText().toString().trim());
+                Categoria categoria = (Categoria ) comboCategoria.getSelectedItem();
+
+                Produto produto = new Produto(nome, descricao, preco, qtd, categoria);
+
+                produtoDAO.inserir(produto);
+
+                carregarProdutos();
+                limparDados();
+
+            }catch(NumberFormatException ex){
+                JOptionPane.showMessageDialog(this,"Falha ao inserir os dados: ","Erro: ", JOptionPane.ERROR_MESSAGE);
+            } catch (SQLException ex) {
+                JOptionPane.showMessageDialog(this,"Falha ao inserir: "+ ex.getMessage());
+            }
+        });
+
         atua_btn = new JButton("Atualizar");
+
         excluir_btn = new JButton("Excluir");
+
         limpar_btn = new JButton("Limpar");
 
         btnPainel.add(add_btn);

@@ -13,7 +13,14 @@ public class Produto {
     public Produto(){
 
     }
+
+    // Construtor sem id — usado para criar um produto novo antes de inserir
+    public Produto(String nome, String descricao, BigDecimal preco, int quantidade, Categoria categoria){
+        this(0, nome, descricao, preco, quantidade, categoria);
+    }
+
     public Produto(int id, String nome, String descricao, BigDecimal preco, int quantidade, Categoria categoria){
+
         this.id = id;
         this.nome = nome;
         this.descricao = descricao;
