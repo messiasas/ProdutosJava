@@ -28,7 +28,39 @@ public class TelaProduto extends JFrame {
     private JTable tabelaProduto;
     private DefaultTableModel modeloTabela;
 
+    private int idSelecionado;
+
     ProdutoDAO produtoDAO = new ProdutoDAO();
+
+    private void configurarSelecaoTabela() {
+        tabelaProduto.getSelectionModel().addListSelectionListener(e -> {
+            if (!e.getValueIsAdjusting() && tabelaProduto.getSelectedRow() != -1) {
+
+                int linha = tabelaProduto.getSelectedRow();
+
+                idSelecionado = (int) modeloTabela.getValueAt(linha, 0);
+                String nome = (String) modeloTabela.getValueAt(linha, 1);
+                String descricao = (String) modeloTabela.getValueAt(linha, 2);
+
+                BigDecimal preco = (BigDecimal) modeloTabela.getValueAt(linha, 3);
+                int quantidade = (int) modeloTabela.getValueAt(linha, 4);
+                Categoria categoriaDaLinha = (Categoria) modeloTabela.getValueAt(linha, 5);
+
+                nome_campo.setText(nome);
+                descr_campo.setText(descricao);
+                preco_campo.setText(preco.toString());
+                qtd_campo.setText(String.valueOf(quantidade));
+
+                for (int i = 0; i < comboCategoria.getItemCount(); i++) {
+                    Categoria c = comboCategoria.getItemAt(i);
+                    if (c.getId() == categoriaDaLinha.getId()) {
+                        comboCategoria.setSelectedIndex(i);
+                        break;
+                    }
+                }
+            }
+        });
+    }
 
     private void carregarCategoria(){
         try{
@@ -45,9 +77,7 @@ public class TelaProduto extends JFrame {
 
     private void carregarProdutos(){
         try{
-            ProdutoDAO produtoDAO = new ProdutoDAO();
             List<Produto> produtos = produtoDAO.listarTodos();
-
             modeloTabela.setRowCount(0);
 
             for(Produto produto : produtos){ // Object é um array que guarda variados tipos de objeto
@@ -158,7 +188,61 @@ public class TelaProduto extends JFrame {
 
         atua_btn = new JButton("Atualizar");
 
+        atua_btn.addActionListener(e -> {
+            if (tabelaProduto.getSelectedRow() == -1) {
+                JOptionPane.showMessageDialog(this, "Selecione um produto para atualizar.");
+                return;
+            }
+
+            try {
+                String nome = nome_campo.getText().trim();
+                String descricao = descr_campo.getText().trim();
+                BigDecimal preco = new BigDecimal(preco_campo.getText().trim());
+                int qtd = Integer.parseInt(qtd_campo.getText().trim());
+                Categoria categoria = (Categoria) comboCategoria.getSelectedItem();
+
+                Produto produto = new Produto(idSelecionado, nome, descricao, preco, qtd, categoria);
+
+                produtoDAO.atualizar(produto);
+
+                JOptionPane.showMessageDialog(this, "Atualizado");
+
+                carregarProdutos();
+                limparDados();
+
+            } catch (NumberFormatException ex) {
+                JOptionPane.showMessageDialog(this, "Preço ou quantidade inválidos.", "Erro", JOptionPane.ERROR_MESSAGE);
+            } catch (SQLException ex) {
+                JOptionPane.showMessageDialog(this, "Falha ao atualizar: " + ex.getMessage());
+            }
+        });
+
         excluir_btn = new JButton("Excluir");
+
+        excluir_btn.addActionListener(e -> {
+            if (tabelaProduto.getSelectedRow() == -1) {
+                JOptionPane.showMessageDialog(this, "Selecione um produto para excluir.");
+                return;
+            }
+
+            int confirmacao = JOptionPane.showConfirmDialog(
+                    this,
+                    "Deseja realmente excluir este produto?",
+                    "Confirmar exclusão",
+                    JOptionPane.YES_NO_OPTION
+            );
+
+            if (confirmacao == JOptionPane.YES_OPTION) {
+                try {
+                    produtoDAO.excluir(idSelecionado);
+                    carregarProdutos();
+                    limparDados();
+
+                } catch (SQLException ex) {
+                    JOptionPane.showMessageDialog(this, "Falha ao excluir: " + ex.getMessage());
+                }
+            }
+        });
 
         limpar_btn = new JButton("Limpar");
 
@@ -171,7 +255,9 @@ public class TelaProduto extends JFrame {
         add(scrollTabela, BorderLayout.CENTER);
         add(btnPainel, BorderLayout.SOUTH);
 
+        configurarSelecaoTabela();
         carregarCategoria();
         carregarProdutos();
+
     }
 }

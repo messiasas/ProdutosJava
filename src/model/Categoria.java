@@ -19,7 +19,7 @@ public class Categoria {
         this.id = id;
     }
 
-    public String nome(){
+    public String getnome(){
         return nome;
     }
     public void setNome(String nome){
